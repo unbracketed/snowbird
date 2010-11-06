@@ -100,3 +100,50 @@ class BaseMap(object):
 #    
 #    """
 
+
+"""
+table filter
+row filter
+field filter
+"""
+
+class Job(object):
+    """
+    Job dcclreas source 
+    """
+    def __init__(self):
+        
+        #check for src, dest models
+        self.source
+
+
+
+        try:
+            self.filters
+        except:
+            pass
+        
+        self.batch_size = self.calculate_batch_size()
+
+    
+    def calculate_batch_size(self):
+        pass
+
+
+	def batches(self):
+	    pass
+
+	def get_batch_related(self):
+	    pass
+
+	def process_queryset(self):
+	    pass
+
+    def insert_batch(self, data, query=None):
+        pass
+
+
+    def run(self):
+        pass
+
+
