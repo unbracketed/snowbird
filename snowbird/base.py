@@ -1,13 +1,6 @@
-class Counter(object):
-    """
-    Provides a counter for map objects
-    """
+from itertools import count
 
 
-class Relation(object):
-    """
-    Represents a relation
-    """
 
 
 class BaseMap(object):
@@ -107,6 +100,10 @@ row filter
 field filter
 """
 
+class MissingDataSourceException(Exception):
+	"Thrown when a Job cannot find valid Reader and Writer channels"
+
+
 class Job(object):
     """
     Job dcclreas source 
@@ -114,10 +111,13 @@ class Job(object):
     def __init__(self):
         
         #check for src, dest models
-        self.source
+        self.get_data_source()
+        
+        #any related fields?
 
+        self.inspect_source()
 
-
+        #batch size
         try:
             self.filters
         except:
@@ -126,12 +126,69 @@ class Job(object):
         self.batch_size = self.calculate_batch_size()
 
     
-    def calculate_batch_size(self):
+	def get_data_source(self):
+		if not hasattr(self, source):
+			raise MissingDataSourceException
+
+
+    def inspect_source(self):
         pass
 
 
-	def batches(self):
-	    pass
+class NoSourceFieldsDefinedError(Exception):
+	"""Raised when a source cannot determine any fields to query"""
+
+class InvalidSourceFieldError(Exception):
+	"""Raised when a field is declared on the Source that cannot 
+	be resolved via the reader"""
+
+class Source:
+
+
+	def __init__(self, **options):
+
+        self._counters = {}
+        self._fields = []
+
+        #look for fields
+        if hasattr(self, 'fields'):
+            self._fields = self.fields
+            _default_fields = self.get_default_fields()
+            if filter(lambda x: x not in _default_fields, self._fields):
+                raise InvalidSourceFieldError
+        else:
+        	self._fields = self.get_default_fields()
+
+
+        #look for exclude
+        if hasattr(self, 'exclude'):
+        	self._fields = [f for f in self._fields if f in self.exclude]
+        
+        if not self._fields:
+        	raise NoSourceFieldsDefinedError
+
+        #initialize counters
+        if 'counters' in options:
+            for counter in options['counters']:
+            	self._counters[counter] = count() 
+
+        self._default_reader = self.get_reader() 
+        
+        if not hasattr(self, 'slice_size'):
+        	self.slice_size = self._get_default_slice_size()
+
+    def __iter__(self):
+		for slice in self.slices():
+			slice = self.filter_slice(slice)
+			for row in slice:
+				yield self.filter(row)
+
+	def get_reader(self):
+		raise NotImplementedError
+
+    def get_fields(self):
+    	raise NotImplementedError
+
 
 	def get_batch_related(self):
 	    pass
@@ -139,11 +196,50 @@ class Job(object):
 	def process_queryset(self):
 	    pass
 
-    def insert_batch(self, data, query=None):
+    def insert_slice(self, data, query=None):
         pass
 
+    def pull_source(self):
+    	self._src = self.source.objects.all()
+
+	def filter_source(self):
+		for slice in self.slices():
+			self.process_slice(slice)
+
+    def filter_slice(self, slice):
+		for obj in slice:
+			self.filter_object(obj)
+
+	def filter_object(self):
+		field_map = self.get_field_map()
+	    
+
+	def get_field_map(self):
+		pass
 
     def run(self):
-        pass
+       self.pull_source()
+	   self.filter_source()
 
+
+class DjangoModel(Source):
+
+	def __init__(self, model):
+		self.model = model
+
+    def _get_reader_for_model():
+        self.
+
+    def get_reader(self):
+    	return self._get_reader_for_model()
+
+    def get_default_fields(self):
+    	return self.model._meta.fields
+
+
+    def slices(offset=0, size=1000):
+        total = self.model.objects.count()
+        for start in range(offset, total, size):
+            end = min(start + size, total)
+            yield (start, end, total, self.model.objects.iterator()[start:end])
 
