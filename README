@@ -22,6 +22,9 @@ do this efficiently will save a lot of time and frustration. Snowbird provides a
 for making rapid development easier:
 
 
+Required
+--------
+Python 2.6 (not tested with Python 3)
 
 
 Coming Soon:
