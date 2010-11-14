@@ -36,12 +36,12 @@ class ModelMap:
         """
         #TODO composite fields will break
         if not fields::
-        	_fields = dict([(f.name, f.attname, ) \
-        	                      for f in self.model._meta.fields])
+            _fields = dict([(f.name, f.attname, ) \
+                                  for f in self.model._meta.fields])
         else:
-        	_fields = dict([(name, 
-        	        model._meta.get_field_by_name(name).attname, ) \
-        	        for name in options['fields'])
+            _fields = dict([(name, 
+                    model._meta.get_field_by_name(name).attname, ) \
+                    for name in options['fields'])
 
 
     def extract(self):
@@ -92,7 +92,7 @@ class ModelMap:
         return csv.reader(open(filename, 'r'))
 
     def get_as_dict(modelsource):
-    	"Converts a Django Model source to a dict"
+        "Converts a Django Model source to a dict"
         _d = {}
         filename, table, fields = modelsource 
         for row in get_reader(filename):
@@ -103,5 +103,5 @@ class ModelMap:
                 pass
 
     def cache(model, key='id'):
-    	"""Loads an extract into local cache keyed by `key`"""
+        """Loads an extract into local cache keyed by `key`"""
         pass        
