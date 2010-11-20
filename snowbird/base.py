@@ -5,6 +5,10 @@ from MySQLdb import OperationalError
 
 
 class ModelMap:
+    """
+    A ModelMap provides support for declaring data transformation maps between
+    sources and destinations of data. 
+    """
 
     def __init__(self, model,  sources=[], **options):
         self.model = model
