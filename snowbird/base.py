@@ -1,111 +1,115 @@
-import os
-
 from django.db import connections
-from MySQLdb import OperationalError
 
 
-class ModelMap:
+class NoSourceFieldsDefinedError(Exception):
+	"""Raised when a source cannot determine any fields to query"""
+
+class InvalidSourceFieldError(Exception):
+	"""Raised when a field is declared on the Source that cannot 
+	be resolved via the reader"""
+
+
+class DjangoModel(object):
     """
-    A ModelMap provides support for declaring data transformation maps between
-    sources and destinations of data. 
+    A Django Model interface to a dataset. 
     """
+    def __init__(self, **options):
 
-    def __init__(self, model,  sources=[], **options):
-        self.model = model
-        self.sources = {}
-        
-        #TODO inspect relations for model
+        self._fields = []
 
-        self.add_source(model)
-        for source in sources:
-            self.add_source(source)
-
-        self.extract_dir = E_DIR
-
-
-    def add_source(self, modelsource):
-        "Add a data source to the map"
-
-        #TODO is this a relation of the primary model?
-        model = modelsource.model
-        self.sources[model] = getattr(modelsource, 'fields', 
-                [f.name for f in model._meta.fields]
-
-    def get_field_col_map(self, model, fields=[])
-        """
-        Returns a dict mapping each selected field of a 
-        Django model to its DB column name
-
-            {model_field_name: db_column_name}
-        """
-        #TODO composite fields will break
-        if not fields::
-            _fields = dict([(f.name, f.attname, ) \
-                                  for f in self.model._meta.fields])
+        if hasattr(self, 'fields'):
+            for field in self.fields:
+                if not field in self.get_default_fields():
+                    raise InvalidSourceFieldError
+            self._fields = self.fields
         else:
-            _fields = dict([(name, 
-                    model._meta.get_field_by_name(name).attname, ) \
-                    for name in options['fields'])
+            self._fields = self.get_default_fields()
 
-
-    def extract(self):
-        "Do an extract operation for all sources"
-        for source in self.sources:
-            extract_for_model(source, self.sources[source])
-
-    def extract_for_model(model, fields=[]):
-        """
-        Writes the contents of the database table for a
-        Django model to a .csv file
-        """
-
-        #TODO mysql writes output files with mysql user acl
+        if hasattr(self, 'exclude'):
+        	self._fields = [f for f in self._fields if f in self.exclude]
         
-        #TODO get correct cursor for model
-        db = 'default'
-        cur = connections[db].cursor()
-        
-        table = model._meta.db_table
-        if not fields:
+        if not self._fields:
+        	raise NoSourceFieldsDefinedError
+
+
+    @property
+    def columns(self):
+        return [f.attname for f in self.model._meta.fields if not f.attname == 'id']
+
+    @property
+    def values_placeholder(self):
+        numph = len([f for f in self.model._meta.fields if not f.name == 'id'])
+        return ','.join(['%s']*numph)
     
-            colmap = self.get_field_col_map(model, 
-                                        getattr(modelsource, 'fields', []))
-        field_names = [f.attname for f in model._meta.fields]
-        filename = os.path.join(E_DIR, 'e_%s_%s.csv' % (db, table, ))
+    @property
+    def insert_stmt(self):
+        return "INSERT INTO %s (%s) VALUES (%s)" % (self.model._meta.db_table,
+                                                    ','.join(self.columns),
+                                                    self.values_placeholder, )
 
-        MYSQL_OUTFILE_TEMPLATE = \
+    def do_insert(self, values, query=None):
+        
+        if not values:
+            return
+        
+        _q = query if query else self.insert_stmt
+        logging.debug(msg=_q)
+        logging.debug(str(values))
+
+        #get application DB cursor
+        cursor = connections['default'].cursor()
+        #turn off FK checks (MySQL)
+        cursor.execute("SET FOREIGN_KEY_CHECKS=0")
+        
+        result = cursor.executemany(_q, values)
+        cursor.connection.commit()
+        cursor.close()
+        return result
+
+    def do_insert_cols(self, values, cols=None):
         """
-        SELECT %s INTO OUTFILE '%s' 
-        FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
-        LINES TERMINATED BY '\n'
-        FROM %s
-        """ % (','.join(field_names),
-            filename,
-            table, )
-                
-        try:
-            cur.execute(MYSQL_OUTFILE_TEMPLATE)
-        except OperationalError:
-            raise
-        finally:
-            cur.close()
-        return (filename, table, field_names, )
+        a convenience method that accepts a list of dicts to 
+        use as insert values
 
-    def get_reader(filename):
-        "Returns an iterator for a Django model extract"
-        return csv.reader(open(filename, 'r'))
+        cols can be used to specify a list of columns. each dict
+        in values is assumed to have a key for each item in col
+        if col is not specified the cols are generated from the 
+        keys of the first dict in values
+        """
+        if not cols:
+            cols = values[0].keys()
 
-    def get_as_dict(modelsource):
-        "Converts a Django Model source to a dict"
-        _d = {}
-        filename, table, fields = modelsource 
-        for row in get_reader(filename):
-            if len(row) == len(fields):
-                _d.update(row)
-            else:
-                #TODO
-                pass
+        sql = "INSERT INTO %s (%s) VALUES (%s)" \
+                % (self.model._meta.db_table,
+                   ','.join(cols),
+                   ','.join(['%s']*len(cols)))
 
-    def cache(model, key='id'):
-        """Loads an extract into local cache keyed by `key`"""
-        pass        
+        inserts = [[row[c] for c in cols] for row in values]
+        return self.do_insert(inserts, sql)
+
+
+    
+#class LegacyArticle(DjangoModel):
+    #model = Articles
+    #fields = (
+        #('id', 'legacy_id', ), 
+    #)
+
+    ##allows for override of the already selected fields (determined by fields/exclude)
+    #field_map = {
+            #'id': 'legacy_id'
+    #}
+
+
+#class ArticleMap(DataMap):
+    #source = DjangoModel()
+    #destination = DjangoModel()
+
+    #related
+    #reverse_related
+
+    #counters
+
+    #rejected_rows
+
+
