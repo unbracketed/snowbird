@@ -1,17 +1,20 @@
+import logging
 from django.db import connections
+
+LOG = logging.getLogger()
 
 
 class NoSourceFieldsDefinedError(Exception):
-	"""Raised when a source cannot determine any fields to query"""
+    """Raised when a source cannot determine any fields to query"""
 
 class InvalidSourceFieldError(Exception):
-	"""Raised when a field is declared on the Source that cannot 
-	be resolved via the reader"""
+    """Raised when a field is declared on the Source that cannot
+    be resolved via the reader"""
 
 
 class DjangoModel(object):
     """
-    A Django Model interface to a dataset. 
+    A Django Model interface to a dataset.
     """
     def __init__(self, **options):
 
@@ -26,56 +29,72 @@ class DjangoModel(object):
             self._fields = self.get_default_fields()
 
         if hasattr(self, 'exclude'):
-        	self._fields = [f for f in self._fields if f in self.exclude]
-        
+            self._fields = [f for f in self._fields if f in self.exclude]
+
         if not self._fields:
-        	raise NoSourceFieldsDefinedError
-
-
-    @property
-    def columns(self):
-        return [f.attname for f in self.model._meta.fields if not f.attname == 'id']
+            raise NoSourceFieldsDefinedError
 
     @property
     def values_placeholder(self):
-        numph = len([f for f in self.model._meta.fields if not f.name == 'id'])
+        """Generates a string of a list of string placeholders. For example:
+
+            '%s,%s,%s'
+
+        This is used to build the column specification part of the INSERT
+        query. The generated string will contain one placeholder for each
+        field in use by this I/O object.
+        """
+        numph = len(self._fields)
         return ','.join(['%s']*numph)
-    
+
     @property
     def insert_stmt(self):
+        """
+        Generate an INSERT statement using the columns specified for this
+        instance.
+        """
         return "INSERT INTO %s (%s) VALUES (%s)" % (self.model._meta.db_table,
-                                                    ','.join(self.columns),
+                                                    ','.join(self._fields),
                                                     self.values_placeholder, )
 
+    def get_default_fields(self):
+        """
+        Returns all fields for a model.
+        """
+        if not hasattr(self, '_default_fields'):
+            setattr(self, '_default_fields',
+                [f.name for f in self.model._meta.fields])
+        return self._default_fields
+
     def do_insert(self, values, query=None):
-        
+        """
+        Performs an INSERT query using the list of values.
+        """
+
         if not values:
+            LOG.warning("insert called with no values")
             return
-        
+
         _q = query if query else self.insert_stmt
-        logging.debug(msg=_q)
-        logging.debug(str(values))
 
         #get application DB cursor
         cursor = connections['default'].cursor()
         #turn off FK checks (MySQL)
         cursor.execute("SET FOREIGN_KEY_CHECKS=0")
-        
+
         result = cursor.executemany(_q, values)
         cursor.connection.commit()
         cursor.close()
         return result
 
-    def do_insert_cols(self, values, cols=None):
+    def insert_dict_list(self, data, model=None, table=None):
         """
-        a convenience method that accepts a list of dicts to 
-        use as insert values
+        Insert a list of dicts into this model.
 
-        cols can be used to specify a list of columns. each dict
-        in values is assumed to have a key for each item in col
-        if col is not specified the cols are generated from the 
-        keys of the first dict in values
+        Optional args:
+            model -
         """
+        #TODO validate columns against fields
         if not cols:
             cols = values[0].keys()
 
@@ -86,30 +105,3 @@ class DjangoModel(object):
 
         inserts = [[row[c] for c in cols] for row in values]
         return self.do_insert(inserts, sql)
-
-
-    
-#class LegacyArticle(DjangoModel):
-    #model = Articles
-    #fields = (
-        #('id', 'legacy_id', ), 
-    #)
-
-    ##allows for override of the already selected fields (determined by fields/exclude)
-    #field_map = {
-            #'id': 'legacy_id'
-    #}
-
-
-#class ArticleMap(DataMap):
-    #source = DjangoModel()
-    #destination = DjangoModel()
-
-    #related
-    #reverse_related
-
-    #counters
-
-    #rejected_rows
-
-
