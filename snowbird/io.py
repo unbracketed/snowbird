@@ -39,8 +39,6 @@ class InvalidSourceFieldError(Exception):
         return self.msg
 
 
-
-
 class DjangoModel(DBMixin):
     """
     A Django Model interface to a dataset.
