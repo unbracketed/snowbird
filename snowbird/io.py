@@ -43,6 +43,8 @@ class DjangoModel(DBMixin):
     """
     A Django Model interface to a dataset.
     """
+    connection = connections['default']
+
     def __init__(self, **options):
         if not getattr(self, 'model', False):
             raise ModelMissingError(self)
@@ -85,4 +87,19 @@ class DjangoModel(DBMixin):
         """
         Returns the DB connection to use
         """
-        return connections['default']
+        return self.connection
+
+    def get_queryset(self):
+        """
+        Returns a QuerySet that will evaluate to all
+        rows in the table, with columns corresponding to
+        the specified fields
+        """
+        return self.model.objects.all()
+
+    def get_data(self):
+        """
+        Executes the calculated query and returns a list
+        of dicts
+        """
+        return self.get_queryset()

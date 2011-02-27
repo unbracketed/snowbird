@@ -27,6 +27,20 @@ class DBMixin(object):
                                                     ','.join(self._fields),
                                                     self.values_placeholder, )
 
+    def execute_queries(self, queries):
+        for query in queries:
+            self.execute_query(query)
+
+    def execute_query(self, query):
+
+        cursor = self.get_connection().cursor()
+        cursor.execute(query)
+        cursor.connection.commit()
+        results = cursor.fetchall()
+        cursor.close()
+        return results
+
+
     def insert_values_list(self, query, values):
         """
         Performs an INSERT query using the list of values.
@@ -36,7 +50,7 @@ class DBMixin(object):
             LOG.warning("insert called with no values")
             return
 
-        cursor = self.connection.cursor()
+        cursor = self.get_connection().cursor()
         cursor.execute("SET FOREIGN_KEY_CHECKS=0")
         result = cursor.executemany(query, values)
         cursor.connection.commit()
@@ -56,3 +70,11 @@ class DBMixin(object):
 
         inserts = [[row[col] for col in self.columns] for row in data]
         return self.do_insert(inserts, sql)
+
+    def get_metrics(self):
+        """Returns row count, avg row size"""
+        sql = "SELECT COUNT(*) FROM %s" % self.table
+
+        res = self.execute_query(sql)
+        return {'rows': res[0][0]}
+
