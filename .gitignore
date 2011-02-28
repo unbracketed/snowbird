@@ -2,3 +2,4 @@ snowbird.egg-info
 *.pyc
 _build
 .coverage
+snowbird_test
