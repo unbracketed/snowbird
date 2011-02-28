@@ -2,6 +2,9 @@
 DataMap
 """
 from collections import namedtuple
+import logging
+
+LOG = logging.getLogger()
 
 
 class MissingSourceError(Exception):
@@ -57,7 +60,11 @@ class DataMap(object):
             pass
 
         for row in self.IN:
-            self.process_row(row)
+            mapped = self.process_row(row)
+            if self.OUT:
+            	pass
+            else:
+            	LOG.info(str(row))
 
     def process_row(self, row):
         return row

@@ -8,8 +8,8 @@ LOG = logging.getLogger()
 
 class ModelMissingError(Exception):
     """Raised when the Django model class isn't specified"""
-    def __init__(self, klass):
-        self.msg = "%s is missing required model attribute" %klass.__class__.__name__
+    def __init__(self, inst):
+        self.msg = "%s is missing required model attribute" %inst.__class__.__name__
     def __str__(self):
         return self.msg
 
