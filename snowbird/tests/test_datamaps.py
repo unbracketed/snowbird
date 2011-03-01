@@ -22,3 +22,11 @@ class TestDataMap(TestCase):
         jobs = self.tm.get_extract_jobs()
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0], dj)
+
+        TestModelDataMap.batch_size = 3
+        tm = TestModelDataMap()
+        jobs = tm.get_extract_jobs()
+        print jobs
+        self.assertEqual(len(jobs), 4)
+        self.assertEqual([3,3,3,1], [j.num_rows for j in jobs])
+        self.assertEqual([0,3,6,9], [j.offset for j in jobs])

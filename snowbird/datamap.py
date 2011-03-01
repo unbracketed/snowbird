@@ -45,13 +45,20 @@ class DataMap(object):
             kwargs = options.get('destination', {})
             self.OUT = self.destination(**kwargs)
 
+        self.batch_size = getattr(self, 'batch_size', DEFAULT_BATCH_SIZE)
+
     def get_extract_jobs(self):
         """Returns a list of DataJobs that will use this DataMap"""
         metrics = self.IN.get_metrics()
-        num_jobs = (metrics['rows'] / DEFAULT_BATCH_SIZE) \
-                    + (1 if metrics['rows'] % DEFAULT_BATCH_SIZE else 0)
-        return [DataJob(self.__class__, offset*DEFAULT_BATCH_SIZE, 1000) \
-                for offset in range(num_jobs)]
+        num_jobs = (metrics['rows'] / self.batch_size)
+        return [DataJob(self.__class__, 
+                        offset*self.batch_size, 
+                        self.batch_size) \
+                for offset in range(num_jobs)] + \
+                [DataJob(self.__class__,
+                        num_jobs*self.batch_size,
+                        metrics['rows'] % self.batch_size  or self.batch_size)]
+
     
     def run_job(self):
         #match up src/dst fields
