@@ -50,6 +50,9 @@ class DataMap(object):
     def get_extract_jobs(self):
         """Returns a list of DataJobs that will use this DataMap"""
         metrics = self.IN.get_metrics()
+        if not metrics['rows']:
+            LOG.warning("No rows for source %s" %self.IN)
+            return []
         num_jobs = (metrics['rows'] / self.batch_size)
         return [DataJob(self.__class__, 
                         offset*self.batch_size, 
@@ -69,9 +72,9 @@ class DataMap(object):
         for row in self.IN:
             mapped = self.process_row(row)
             if self.OUT:
-            	pass
+                pass
             else:
-            	LOG.info(str(row))
+                LOG.info(str(row))
 
     def process_row(self, row):
         return row
