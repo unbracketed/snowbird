@@ -66,9 +66,8 @@ class DataMap(object):
     def run_job(self):
         #match up src/dst fields
         if self.OUT:
-            #TODO
-            pass
 
+            pass
         for row in self.IN:
             mapped = self.process_row(row)
             if self.OUT:

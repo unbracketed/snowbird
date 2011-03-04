@@ -54,25 +54,32 @@ class DjangoModel(DBMixin):
         self._fields = []
 
         if hasattr(self, 'fields'):
-            if not set(self.fields).issubset(set(self.get_default_fields())):
-                raise InvalidSourceFieldError(
-                        set(self.fields)-set(self.get_default_fields()),
-                        self.model)
+            self._verify_fields(self.fields)
             self._fields = self.fields
         else:
             self._fields = self.get_default_fields()
 
         if hasattr(self, 'exclude'):
-            if not set(self.exclude).issubset(set(self._fields)):
-                raise InvalidSourceFieldError(
-                        set(self.exclude)-set(self._fields),
-                        self.model)
+            self._verify_fields(self.exclude)
             self._fields = [f for f in self._fields if not f in self.exclude]
 
         if not self._fields:
             raise NoSourceFieldsDefinedError(self.model)
 
         self.table = self.model._meta.db_table
+
+    def _verify_fields(self, fields):
+        "make sure the fields specified are valid fields on the Model"
+        if not set(fields).issubset(set(self.get_default_fields())):
+            raise InvalidSourceFieldError(
+                    set(fields)-set(self.get_default_fields()), self.model)
+        
+    def get_fields(self):
+        """
+        Returns the set of fields to be used for the model,
+        taking into account ``fields`` and ``exclude`` options.
+        """
+        return self._fields
 
     def get_default_fields(self):
         """
