@@ -3,3 +3,4 @@ snowbird.egg-info
 _build
 .coverage
 snowbird_test
+snowbird.log
