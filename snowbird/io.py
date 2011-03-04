@@ -3,7 +3,7 @@ from django.db import connections, models
 from snowbird.db import DBMixin
 
 import logging
-LOG = logging.getLogger()
+LOG = logging.getLogger('snowbird')
 
 
 class ModelMissingError(Exception):
@@ -68,6 +68,11 @@ class DjangoModel(DBMixin):
 
         self.table = self.model._meta.db_table
 
+    def __iter__(self):
+        qs = self.get_data()
+        for row in qs:
+            yield row
+
     def _verify_fields(self, fields):
         "make sure the fields specified are valid fields on the Model"
         if not set(fields).issubset(set(self.get_default_fields())):
@@ -102,6 +107,7 @@ class DjangoModel(DBMixin):
         rows in the table, with columns corresponding to
         the specified fields
         """
+        #TODO
         return self.model.objects.all()
 
     def get_data(self):
@@ -109,4 +115,5 @@ class DjangoModel(DBMixin):
         Executes the calculated query and returns a list
         of dicts
         """
-        return self.get_queryset()
+        #import ipdb; ipdb.set_trace()
+        return self.get_queryset().values()

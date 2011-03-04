@@ -1,3 +1,8 @@
+import logging
+LOG = logging.getLogger('snowbird')
+LOG.addHandler(logging.FileHandler('snowbird.log'))
+
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -50,6 +55,7 @@ MEDIA_ROOT = ''
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
 MEDIA_URL = ''
 
+
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
@@ -57,13 +63,6 @@ ADMIN_MEDIA_PREFIX = '/media/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '_7f57*)a3wk4e7%ij-c20hn)=u=zx$9rkefhyr+j)a8h)z-034'
-
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
-)
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
@@ -75,11 +74,6 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'dummy.urls'
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
 
 INSTALLED_APPS = (
     #'django.contrib.auth',
@@ -94,5 +88,10 @@ INSTALLED_APPS = (
     'django_nose',
     'snowbird.tests',
 )
+try:
+    import django_extensions
+    INSTALLED_APPS += ('django_extensions', )
+except ImportError:
+    pass
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'

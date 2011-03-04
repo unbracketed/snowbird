@@ -36,3 +36,6 @@ class TestDataMap(TestCase):
         jobs = tm2.get_extract_jobs()
         print jobs 
         self.assertEqual(len(jobs), 0)
+
+    def test_run_job(self):
+        self.tm.run_job()

@@ -4,7 +4,7 @@ DataMap
 from collections import namedtuple
 import logging
 
-LOG = logging.getLogger()
+LOG = logging.getLogger('snowbird')
 
 
 class MissingSourceError(Exception):
@@ -13,6 +13,10 @@ class MissingSourceError(Exception):
         self.msg = "%s is missing required source attribute" %inst.__class__.__name__
     def __str__(self):
         return self.msg
+
+class InvalidOutField(Exception):
+    """Raised when a row of mapped data contains a field that doesn't
+    exist in the output destination"""
 
 
 DataJob = namedtuple('DataJob', 'source offset num_rows')
@@ -66,17 +70,34 @@ class DataMap(object):
     def run_job(self):
         #match up src/dst fields
         if self.OUT:
+            out_fields = frozenset(self.OUT.get_fields())
+            matches = out_fields.intersect(self.IN.get_fields())
+        else:
+            out_fields = self.IN.get_fields()
+            matches = self.IN.get_fields()
 
-            pass
         for row in self.IN:
-            mapped = self.process_row(row)
-            if self.OUT:
-                pass
-            else:
-                LOG.info(str(row))
+            rowdict = dict([(f, None if not f in matches else row[f]) for f in out_fields]) #mapped = self.process_row(row, rowdict)
+            
+            #output fields should match OUT fields
+            mapped = self.process_row(row, rowdict)
+            if not frozenset(mapped.keys()) == frozenset(matches):
+                raise InvalidOutField
 
-    def process_row(self, row):
-        return row
+            if self.OUT:
+                self.OUT.append(mapped)
+            else:
+                LOG.info(str(mapped))
+
+    def process_row(self, row, mapped):
+        """
+        Returns a dict with fields matching what is expected
+        by the output destination
+
+        The input is a dict with keys for each of the output 
+        fields
+        """
+        return mapped
 
 
 class DjangoSourceMap(DataMap):
