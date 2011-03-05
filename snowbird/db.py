@@ -53,7 +53,7 @@ class DBMixin(object):
 
         #TODO get DB from connection
         cursor = self.get_connection().cursor()
-        cursor.execute("SET FOREIGN_KEY_CHECKS=0")
+        #cursor.execute("SET FOREIGN_KEY_CHECKS=0")
         t0 = time()
         result = cursor.executemany(query, values)
         cursor.connection.commit()
@@ -65,12 +65,13 @@ class DBMixin(object):
         """
         Insert a list of dicts into this model.
         """
+        columns = self.get_fields()
         sql = "INSERT INTO %s (%s) VALUES (%s)" \
                 % (self.table,
-                    ','.join(self.columns),
-                    ','.join(['%s']*len(self.columns)))
+                    ','.join(columns),
+                    ','.join(['%s']*len(columns)))
 
-        inserts = [[row[col] for col in self.columns] for row in data]
+        inserts = [[row[col] for col in columns] for row in data]
         return self.insert_values_list(sql, inserts)
 
     def get_metrics(self):
@@ -78,4 +79,5 @@ class DBMixin(object):
         sql = "SELECT COUNT(*) FROM %s" % self.table
 
         res = self.execute_query(sql)
-        return {'rows': res[0][0]}
+        return {'rows': res[0][0],
+                'batch_size': self.batch_size}

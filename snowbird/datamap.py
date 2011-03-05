@@ -21,10 +21,6 @@ class InvalidOutField(Exception):
 
 DataJob = namedtuple('DataJob', 'source offset num_rows')
 
-#use 1000 rows as a totally arbitrary, mostly
-#sensible default
-DEFAULT_BATCH_SIZE = 1000
-
 
 class DataMap(object):
     """
@@ -49,34 +45,38 @@ class DataMap(object):
             kwargs = options.get('destination', {})
             self.OUT = self.destination(**kwargs)
 
-        self.batch_size = getattr(self, 'batch_size', DEFAULT_BATCH_SIZE)
+        #self.batch_size = getattr(self, 'batch_size', DEFAULT_BATCH_SIZE)
 
-    def get_extract_jobs(self):
-        """Returns a list of DataJobs that will use this DataMap"""
-        metrics = self.IN.get_metrics()
-        if not metrics['rows']:
-            LOG.warning("No rows for source %s.%s" %(self.__class__.__name__,
-                self.IN.__class__.__name__))
-            return []
-        num_jobs = (metrics['rows'] / self.batch_size)
-        return [DataJob(self.__class__, 
-                        offset*self.batch_size, 
-                        self.batch_size) \
-                for offset in range(num_jobs)] + \
-                [DataJob(self.__class__,
-                        num_jobs*self.batch_size,
-                        metrics['rows'] % self.batch_size  or self.batch_size)]
 
     def get_field_sets(self):
         "Returns a tuple containing input, output, and matched fields"
         #match up src/dst fields
         if self.OUT:
             out_fields = frozenset(self.OUT.get_fields())
-            matches = out_fields.intersect(self.IN.get_fields())
+            matches = out_fields.intersection(self.IN.get_fields())
         else:
             out_fields = self.IN.get_fields()
             matches = self.IN.get_fields()
         return (self.IN.get_fields(), out_fields, matches)
+
+    def get_jobs(self):
+        return self.get_extract_jobs()
+
+    def get_extract_jobs(self):
+        """Returns a list of DataJobs that will use this DataMap"""
+        metrics = self.IN.get_metrics()
+        if not metrics['rows']:
+            LOG.warning("No rows for source %s.%s on connection %s" %(self.__class__.__name__,
+                self.IN.__class__.__name__, self.IN.get_connection().alias))
+            return []
+        num_jobs = (metrics['rows'] / metrics['batch_size'])
+        return [DataJob(self.__class__, 
+                        offset*metrics['batch_size'], 
+                        metrics['batch_size']) \
+                for offset in range(num_jobs)] + \
+                [DataJob(self.__class__,
+                        num_jobs*metrics['batch_size'],
+                        metrics['rows'] % metrics['batch_size']  or metrics['batch_size'])]
 
     def run_job(self):
         """

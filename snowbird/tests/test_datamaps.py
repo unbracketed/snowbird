@@ -1,5 +1,5 @@
 from django.test import TestCase
-from snowbird.datamap import DataJob, DataMap
+from snowbird.datamap import DataMap, DataJob
 from snowbird.io import DjangoModel
 from snowbird.tests.datamaps import TestModelDataMap
 from snowbird.tests.models import TestModel2
@@ -14,16 +14,17 @@ class TestDataMap(TestCase):
     def setUp(self):
         self.tm = TestModelDataMap()
 
-    def test_get_extract_jobs(self):
-        "make sure get_extract_jobs works"
+    def test_get_jobs(self):
+        "make sure get_jobs works"
         dj = DataJob(self.tm.__class__, 0, 10)
-        jobs = self.tm.get_extract_jobs()
+        jobs = self.tm.get_jobs()
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0], dj)
 
-        TestModelDataMap.batch_size = 3
-        tm = TestModelDataMap()
-        jobs = tm.get_extract_jobs()
+        #TestModelDataMap.batch_size = 3
+        #tm = TestModelDataMap()
+        self.tm.IN.batch_size = 3
+        jobs = self.tm.get_jobs()
         self.assertEqual(len(jobs), 4)
         self.assertEqual([3,3,3,1], [j.num_rows for j in jobs])
         self.assertEqual([0,3,6,9], [j.offset for j in jobs])
@@ -33,9 +34,11 @@ class TestDataMap(TestCase):
         class TM2(DataMap):
             source = DM2
         tm2 = TM2()
-        jobs = tm2.get_extract_jobs()
+        jobs = tm2.get_jobs()
         print jobs 
         self.assertEqual(len(jobs), 0)
 
     def test_run_job(self):
         self.tm.run_job()
+        self.assertEqual(self.tm.OUT.model.objects.count(), 10)
+

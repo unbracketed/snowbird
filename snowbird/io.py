@@ -38,6 +38,12 @@ class InvalidSourceFieldError(Exception):
     def __str__(self):
         return self.msg
 
+#use 1000 rows as a totally arbitrary, mostly
+#sensible default
+DEFAULT_BATCH_SIZE = 1000
+
+
+
 
 class DjangoModel(DBMixin):
     """
@@ -67,6 +73,7 @@ class DjangoModel(DBMixin):
             raise NoSourceFieldsDefinedError(self.model)
 
         self.table = self.model._meta.db_table
+        self.batch_size = getattr(self, 'batch_size', DEFAULT_BATCH_SIZE)
 
     def __iter__(self):
         qs = self.get_data()
@@ -132,3 +139,4 @@ class DjangoModel(DBMixin):
         self.write_queue.append(item)
         if len(self.write_queue) >= self.batch_size:
             self.flush()
+
