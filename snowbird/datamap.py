@@ -55,7 +55,8 @@ class DataMap(object):
         """Returns a list of DataJobs that will use this DataMap"""
         metrics = self.IN.get_metrics()
         if not metrics['rows']:
-            LOG.warning("No rows for source %s" %self.IN)
+            LOG.warning("No rows for source %s.%s" %(self.__class__.__name__,
+                self.IN.__class__.__name__))
             return []
         num_jobs = (metrics['rows'] / self.batch_size)
         return [DataJob(self.__class__, 
