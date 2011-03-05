@@ -107,8 +107,7 @@ class DjangoModel(DBMixin):
         rows in the table, with columns corresponding to
         the specified fields
         """
-        #TODO
-        return self.model.objects.all()
+        return self.model.objects.using(self.get_connection().alias).all()
 
     def get_data(self):
         """
@@ -125,9 +124,11 @@ class DjangoModel(DBMixin):
         self.write_queue = []
 
     def append(self, item):
+        """
+        Appends a row to the write queue.
+        """
         if not hasattr(self, 'write_queue'):
             self.write_queue = []
         self.write_queue.append(item)
         if len(self.write_queue) >= self.batch_size:
             self.flush()
-        
