@@ -97,6 +97,10 @@ class DataMap(object):
             else:
                 LOG.info(str(mapped))
 
+        #notify OUT that no more data is coming
+        if self.OUT:
+            self.OUT.flush()
+
     def process_row(self, row, mapped):
         """
         Returns a dict with fields matching what is expected

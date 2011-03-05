@@ -115,5 +115,19 @@ class DjangoModel(DBMixin):
         Executes the calculated query and returns a list
         of dicts
         """
-        #import ipdb; ipdb.set_trace()
-        return self.get_queryset().values()
+        return self.get_queryset().values(*(self.get_fields()))
+
+    def flush(self):
+        """
+        Forces a write operation using the data currently held by the IO object.
+        """
+        self.insert_dict_list(self.write_queue)
+        self.write_queue = []
+
+    def append(self, item):
+        if not hasattr(self, 'write_queue'):
+            self.write_queue = []
+        self.write_queue.append(item)
+        if len(self.write_queue) >= self.batch_size:
+            self.flush()
+        
