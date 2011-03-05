@@ -17,7 +17,14 @@ class DatabaseAdapter(object):
     
     def __get__(self, obj, objtype):
         try:
-        	ENGINE_MODULES[obj.get_connection().settings_dict['ENGINE']]
+            db_module = ENGINE_MODULES[obj.get_connection().settings_dict['ENGINE']]
         except KeyError:
-            #TODO
-        	raise "DB not supported"
+            #TODO better msg
+            raise "DB not supported"
+        #from nose.tools import set_trace; set_trace()
+
+        module = __import__('snowbird.db.%s' %db_module, {}, {}, [''])
+        return module.DatabaseOperations(
+                table=obj.model._meta.db_table,
+                columns=obj.get_fields(),
+                connection=obj.get_connection())

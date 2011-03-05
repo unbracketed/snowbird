@@ -2,8 +2,11 @@
 
 class DatabaseOperations:
     
-    def __init__(self):
-        pass
+    def __init__(self, table, columns, connection):
+        self.columns = columns
+        self.table = table
+        self.connection = connection
+
 
     @property
     def values_placeholder(self):
@@ -15,8 +18,7 @@ class DatabaseOperations:
         query. The generated string will contain one placeholder for each
         field in use by this I/O object.
         """
-        #TODO
-        numph = len(self._fields)
+        numph = len(self.columns)
         return ','.join(['%s']*numph)
 
     @property
@@ -25,9 +27,8 @@ class DatabaseOperations:
         Generate an INSERT statement using the columns specified for this
         instance.
         """
-        #TODO
-        return "INSERT INTO %s (%s) VALUES (%s)" % (self.model._meta.db_table,
-                                                    ','.join(self._fields),
+        return "INSERT INTO %s (%s) VALUES (%s)" % (self.table,
+                                                    ','.join(self.columns),
                                                     self.values_placeholder, )
 
     #def execute_queries(self, queries):
@@ -36,9 +37,10 @@ class DatabaseOperations:
 
     def execute_query(self, query):
 
-        cursor = self.get_connection().cursor()
+        cursor = self.connection.cursor()
         cursor.execute(query)
         cursor.connection.commit()
+        #TODO check result
         results = cursor.fetchall()
         cursor.close()
         return results
@@ -52,9 +54,9 @@ class DatabaseOperations:
             return
 
         #TODO get DB from connection
-        cursor = self.get_connection().cursor()
+        cursor = self.connection.cursor()
         #cursor.execute("SET FOREIGN_KEY_CHECKS=0")
-        t0 = time()
+        #t0 = time()
         #TODO check result
         result = cursor.executemany(query, values)
         cursor.connection.commit()
@@ -67,13 +69,12 @@ class DatabaseOperations:
         """
         Insert a list of dicts into this model.
         """
-        columns = self.get_fields()
         sql = "INSERT INTO %s (%s) VALUES (%s)" \
                 % (self.table,
-                    ','.join(columns),
-                    ','.join(['%s']*len(columns)))
+                    ','.join(self.columns),
+                    ','.join(['%s']*len(self.columns)))
 
-        inserts = [[row[col] for col in columns] for row in data]
+        inserts = [[row[col] for col in self.columns] for row in data]
         return self.insert_values_list(sql, inserts)
 
     def get_metrics(self):
@@ -81,6 +82,4 @@ class DatabaseOperations:
         sql = "SELECT COUNT(*) FROM %s" % self.table
 
         res = self.execute_query(sql)
-        return {'rows': res[0][0],
-                'batch_size': self.batch_size}
-
+        return {'rows': res[0][0]}

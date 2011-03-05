@@ -1,6 +1,7 @@
+from time import time
 from django.db import connections, models
 
-from snowbird.db import DatabaseOperations
+from snowbird.db.base import DatabaseAdapter
 
 import logging
 LOG = logging.getLogger('snowbird')
@@ -49,7 +50,7 @@ class DjangoModel(object):
     A Django Model interface to a dataset.
     """
     connection = connections['default']
-    db = DatabaseOperations()
+    db = DatabaseAdapter()
 
     def __init__(self, **options):
         if not getattr(self, 'model', False):
@@ -72,7 +73,7 @@ class DjangoModel(object):
         if not self._fields:
             raise NoSourceFieldsDefinedError(self.model)
 
-        self.table = self.model._meta.db_table
+        #self.table = self.model._meta.db_table
         self.batch_size = getattr(self, 'batch_size', DEFAULT_BATCH_SIZE)
 
 
@@ -128,8 +129,10 @@ class DjangoModel(object):
         """
         Forces a write operation using the data currently held by the IO object.
         """
-        self.insert_dict_list(self.write_queue)
+        t0 = time()
+        self.db.insert_dict_list(self.write_queue)
         self.write_queue = []
+        LOG.info("[OUT]\t%s\t%s" %(self.__class__.__name__, time() - t0))
 
     def append(self, item):
         """
@@ -141,3 +144,7 @@ class DjangoModel(object):
         if len(self.write_queue) >= self.batch_size:
             self.flush()
 
+    def get_metrics(self):
+        metrics = {'batch_size': self.batch_size}
+        metrics.update(self.db.get_metrics())
+        return metrics
