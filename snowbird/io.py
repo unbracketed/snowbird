@@ -1,6 +1,6 @@
 from django.db import connections, models
 
-from snowbird.db import DBMixin
+from snowbird.db import DatabaseOperations
 
 import logging
 LOG = logging.getLogger('snowbird')
@@ -38,18 +38,18 @@ class InvalidSourceFieldError(Exception):
     def __str__(self):
         return self.msg
 
+
 #use 1000 rows as a totally arbitrary, mostly
 #sensible default
 DEFAULT_BATCH_SIZE = 1000
 
 
-
-
-class DjangoModel(DBMixin):
+class DjangoModel(object):
     """
     A Django Model interface to a dataset.
     """
     connection = connections['default']
+    db = DatabaseOperations()
 
     def __init__(self, **options):
         if not getattr(self, 'model', False):
@@ -74,6 +74,7 @@ class DjangoModel(DBMixin):
 
         self.table = self.model._meta.db_table
         self.batch_size = getattr(self, 'batch_size', DEFAULT_BATCH_SIZE)
+
 
     def __iter__(self):
         qs = self.get_data()
