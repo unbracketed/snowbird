@@ -67,8 +67,8 @@ class DataMap(object):
                         num_jobs*self.batch_size,
                         metrics['rows'] % self.batch_size  or self.batch_size)]
 
-    
-    def run_job(self):
+    def get_field_sets(self):
+        "Returns a tuple containing input, output, and matched fields"
         #match up src/dst fields
         if self.OUT:
             out_fields = frozenset(self.OUT.get_fields())
@@ -76,12 +76,19 @@ class DataMap(object):
         else:
             out_fields = self.IN.get_fields()
             matches = self.IN.get_fields()
+        return (self.IN.get_fields(), out_fields, matches)
 
+    def run_job(self):
+        """
+        Performs the action of mapping the source input data to the 
+        output destination.
+        """
+        in_fields, out_fields, matches = self.get_field_sets()
         for row in self.IN:
-            rowdict = dict([(f, None if not f in matches else row[f]) for f in out_fields]) #mapped = self.process_row(row, rowdict)
-            
-            #output fields should match OUT fields
+            rowdict = dict([(f, None if not f in matches else row[f]) for f in out_fields])
             mapped = self.process_row(row, rowdict)
+
+            #output fields should match OUT fields
             if not frozenset(mapped.keys()) == frozenset(matches):
                 raise InvalidOutField
 
