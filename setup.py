@@ -14,7 +14,7 @@ setup(
     license='BSD',
     author='Brian Luft',
     packages=['snowbird'],
-    namespace_packages=['snowbird'],
+    #namespace_packages=['snowbird'],
     zip_safe=False,
     platforms='any',
     install_requires=[],
