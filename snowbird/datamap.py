@@ -45,8 +45,6 @@ class DataMap(object):
             kwargs = options.get('destination', {})
             self.OUT = self.destination(**kwargs)
 
-        #self.batch_size = getattr(self, 'batch_size', DEFAULT_BATCH_SIZE)
-
 
     def get_field_sets(self):
         "Returns a tuple containing input, output, and matched fields"
@@ -78,28 +76,28 @@ class DataMap(object):
                         num_jobs*metrics['batch_size'],
                         metrics['rows'] % metrics['batch_size']  or metrics['batch_size'])]
 
-    def run_job(self):
-        """
-        Performs the action of mapping the source input data to the 
-        output destination.
-        """
-        in_fields, out_fields, matches = self.get_field_sets()
-        for row in self.IN:
-            rowdict = dict([(f, None if not f in matches else row[f]) for f in out_fields])
-            mapped = self.process_row(row, rowdict)
+    #def run_job(self):
+        #"""
+        #Performs the action of mapping the source input data to the 
+        #output destination.
+        #"""
+        #in_fields, out_fields, matches = self.get_field_sets()
+        #for row in self.IN:
+            #rowdict = dict([(f, None if not f in matches else row[f]) for f in out_fields])
+            #mapped = self.process_row(row, rowdict)
 
-            #output fields should match OUT fields
-            if not frozenset(mapped.keys()) == frozenset(matches):
-                raise InvalidOutField
+            ##output fields should match OUT fields
+            #if not frozenset(mapped.keys()) == frozenset(matches):
+                #raise InvalidOutField
 
-            if self.OUT:
-                self.OUT.append(mapped)
-            else:
-                LOG.info(str(mapped))
+            #if self.OUT:
+                #self.OUT.append(mapped)
+            #else:
+                #LOG.info(str(mapped))
 
-        #notify OUT that no more data is coming
-        if self.OUT:
-            self.OUT.flush()
+        ##notify OUT that no more data is coming
+        #if self.OUT:
+            #self.OUT.flush()
 
     def process_row(self, row, mapped):
         """
@@ -112,10 +110,10 @@ class DataMap(object):
         return mapped
 
 
-class DjangoSourceMap(DataMap):
-    """
-    A DataMap for use with DataMaps that specify a DjangoModel as the source
-    """
+#class DjangoSourceMap(DataMap):
+    #"""
+    #A DataMap for use with DataMaps that specify a DjangoModel as the source
+    #"""
     
-    def run_job(self):
-        pass
+    #def run_job(self):
+        #pass
