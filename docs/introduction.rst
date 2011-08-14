@@ -14,3 +14,12 @@ to the framework. The framework will attempt to run operations with reasonable
 tradeoffs between I/O performance and memory constraints,
 while allowing for easy override of default runtime characteristics.
 
+
+Running Tests
+-------------
+
+pip install -r dependencies/required.pip
+
+export DJANGO_SETTINGS_MODULE='snowbird.tests.settings'
+
+django-admin.py test

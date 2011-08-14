@@ -21,8 +21,6 @@ class TestDataMap(TestCase):
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0], dj)
 
-        #TestModelDataMap.batch_size = 3
-        #tm = TestModelDataMap()
         self.tm.IN.batch_size = 3
         jobs = self.tm.get_jobs()
         self.assertEqual(len(jobs), 4)
@@ -35,10 +33,5 @@ class TestDataMap(TestCase):
             source = DM2
         tm2 = TM2()
         jobs = tm2.get_jobs()
-        print jobs 
+        print jobs
         self.assertEqual(len(jobs), 0)
-
-    def test_run_job(self):
-        self.tm.run_job()
-        self.assertEqual(self.tm.OUT.model.objects.count(), 10)
-
