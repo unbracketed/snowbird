@@ -1,14 +1,15 @@
 from collections import namedtuple
 from brewery.ds import base
-from django.db import connections
-import django
+import sys;
+print sys.path
+import django.db
+#from django.db import connections
 
-#from snowbird.io import DjangoModel
 
-Dj_to_Br = namedtuple('Dj_to_Br', 'Field type meta')
-FIELD_TYPE_MAP = (
-        Dj_to_Br(django.db.CharField, "text", "typeless"),
-        )
+#Dj_to_Br = namedtuple('Dj_to_Br', 'Field type meta')
+#FIELD_TYPE_MAP = (
+        #Dj_to_Br(django.db.CharField, "text", "typeless"),
+        #)
 
 
 
