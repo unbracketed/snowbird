@@ -2,6 +2,7 @@
 DataMap
 """
 from collections import namedtuple
+from django.db import connections
 import logging
 
 LOG = logging.getLogger('snowbird')
@@ -68,17 +69,23 @@ class DataMap(object):
                 self.IN.__class__.__name__, self.IN.get_connection().alias))
             return []
         num_jobs = (metrics['rows'] / metrics['batch_size'])
-        return [DataJob(self.__class__, 
-                        offset*metrics['batch_size'], 
+        return [DataJob(self.__class__,
+                        offset*metrics['batch_size'],
                         metrics['batch_size']) \
                 for offset in range(num_jobs)] + \
                 [DataJob(self.__class__,
                         num_jobs*metrics['batch_size'],
                         metrics['rows'] % metrics['batch_size']  or metrics['batch_size'])]
 
+    def get_connection(self):
+        if not hasattr(self, 'connection'):
+        	return connections['default']
+        else:
+        	return self.connection
+
     #def run_job(self):
         #"""
-        #Performs the action of mapping the source input data to the 
+        #Performs the action of mapping the source input data to the
         #output destination.
         #"""
         #in_fields, out_fields, matches = self.get_field_sets()
@@ -104,7 +111,7 @@ class DataMap(object):
         Returns a dict with fields matching what is expected
         by the output destination
 
-        The input is a dict with keys for each of the output 
+        The input is a dict with keys for each of the output
         fields
         """
         return mapped
@@ -114,6 +121,6 @@ class DataMap(object):
     #"""
     #A DataMap for use with DataMaps that specify a DjangoModel as the source
     #"""
-    
+
     #def run_job(self):
         #pass

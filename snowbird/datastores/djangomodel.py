@@ -1,16 +1,20 @@
 from collections import namedtuple
 from brewery.ds import base
-import sys;
-print sys.path
-import django.db
-#from django.db import connections
+from django.db import connections
+from django.db.models import CharField
 
 
-#Dj_to_Br = namedtuple('Dj_to_Br', 'Field type meta')
+Dj_to_Br = namedtuple('Dj_to_Br', 'type meta')
 #FIELD_TYPE_MAP = (
-        #Dj_to_Br(django.db.CharField, "text", "typeless"),
+        #Dj_to_Br(CharField, "text", "typeless"),
         #)
+FIELD_TYPE_MAP = {
+	CharField: Dj_to_Br('text', 'typeless'),
+}
 
+
+class MissingDjangoModelException(Exception):
+	pass
 
 
 class DjangoModelSource(base.DataSource):
@@ -18,11 +22,13 @@ class DjangoModelSource(base.DataSource):
     Use a Django Model as a DataSource
     """
 
-    def __init__(self, connection, model):
-        self.connection = connections[connection]
-        self.django_model = model
+    def __init__(self):
+        if not hasattr(self, 'model'):
+        	raise MissingDjangoModelException
+        self.connection = getattr(self, 'connection',
+                connections['default'])
         self._fields = None
-        _fields = model.get_fields()
+        #_fields = self.model().get_fields()
 
     def initialize(self):
         pass
@@ -36,18 +42,22 @@ class DjangoModelSource(base.DataSource):
             return self._fields
 
         fields = []
-        for column in self.get_fields():
+        for column in self._meta.fields:
             field = base.Field(name=column.name)
-            field.concrete_storage_type = column.type
+#FIXME
+            #field.concrete_storage_type = column.type
 
-            for conv in FIELD_TYPE_MAP:
-                if issubclass(column.__class__, conv['Field']):
-                    field.storage_type = conv['type']
-                    field.analytical_type = conv['meta']
-                    break
+            #for conv in FIELD_TYPE_MAP:
+                #if issubclass(column.__class__, conv['Field']):
+                    #field.storage_type = conv['type']
+                    #field.analytical_type = conv['meta']
+                    #break
+            conv = FIELD_TYPE_MAP[column]
+            field.storage_type = conv.type
+            field.analytical_type = conv.meta
 
             if not field.storage_type:
-                field.storaget_tpye = "unknown"
+                field.storage_tpye = "unknown"
 
             if not field.analytical_type:
                 field.analytical_type = "unknown"
@@ -66,6 +76,9 @@ class DjangoModelSource(base.DataSource):
 
     def records(self):
         return self.django_model.objects.all().values()
+
+    def get_connection(self):
+    	return connections['default']
 
 
 class DjangoModelTarget(base.DataTarget):
@@ -102,5 +115,5 @@ class DjangoModelTarget(base.DataTarget):
     def _flush(self):
         if len(self._buffer) > 0:
             #FIXME
-            self.datastore.connection.execute(self.insert_command, self._buffer)
+            self.insert_command(buffer)
             self._buffer = []

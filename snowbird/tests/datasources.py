@@ -1,5 +1,5 @@
 from django.db import connections
-from snowbird.datastores.django import DjangoModelSource
+from snowbird.datastores.djangomodel import DjangoModelSource
 from snowbird.tests.models import TestModel
 
 

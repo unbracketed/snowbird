@@ -1,6 +1,6 @@
 from django.test import TestCase
 from snowbird.datamap import DataMap, DataJob
-from snowbird.io import DjangoModel
+#from snowbird.io import DjangoModel
 from snowbird.tests.datamaps import TestModelDataMap
 from snowbird.tests.models import TestModel2
 
